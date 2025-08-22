@@ -16,6 +16,7 @@ function App() {
   const [deviceId, setDeviceId] = useState("vishnu");
   const [liveData, setLiveData] = useState(null);
   const [historyData, setHistoryData] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
@@ -24,6 +25,7 @@ function App() {
         `https://www.gfiotsolutions.com/api/data/${deviceId}`
       );
       setLiveData(res.data);
+      setLastUpdated(new Date()); // update timestamp
     } catch (err) {
       console.error("Error fetching live data", err);
     }
@@ -83,6 +85,11 @@ function App() {
                 <strong>Aerators Working:</strong>{" "}
                 {Math.round(liveData.data.line1 / 3.15)}
               </p>
+              {lastUpdated && (
+                <p className="timestamp">
+                  <em>Last updated: {lastUpdated.toLocaleString()}</em>
+                </p>
+              )}
             </>
           ) : (
             <p className="no-data">No live data available</p>
