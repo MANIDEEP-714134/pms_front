@@ -145,7 +145,7 @@ function App() {
                   }
                 />
                 <Legend />
-                <Line type="monotone" dataKey="line1" stroke="#007bff" />
+                <Line type="monotone" dataKey="line1" stroke="#007bff" name="current" />
               </LineChart>
             </ResponsiveContainer>
           </div>
