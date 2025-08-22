@@ -1,23 +1,124 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from "recharts";
+import "./App.css"; // import our CSS file
 
 function App() {
+  const [deviceId, setDeviceId] = useState("vishnu");
+  const [liveData, setLiveData] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
+
+  const fetchLiveData = async () => {
+    if (!deviceId) return;
+    try {
+      const res = await axios.get(
+        `https://www.gfiotsolutions.com/api/data/${deviceId}`
+      );
+      setLiveData(res.data);
+    } catch (err) {
+      console.error("Error fetching live data", err);
+    }
+  };
+
+  const fetchHistoryData = async () => {
+    if (!deviceId) return;
+    try {
+      const res = await axios.get(
+        `https://www.gfiotsolutions.com/api/history/${deviceId}`
+      );
+      setHistoryData(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching history data", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveData();
+    fetchHistoryData();
+
+    const interval = setInterval(fetchLiveData, 5000);
+    return () => clearInterval(interval);
+  }, [deviceId]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app-container">
+      <h1 className="dashboard-title">Pond Monitoring System</h1>
+
+      {/* Device Selector */}
+      <div className="device-selector">
+        <input
+          value={deviceId}
+          onChange={(e) => setDeviceId(e.target.value)}
+          placeholder="Enter Device ID"
+          className="device-input"
+        />
+      </div>
+      <div className="device-selector">
+ 
+  {/* Logo below the input */}
+  <div className="logo-container">
+    <img src={require("./logo.png")} alt="Company Logo" className="logo" />
+  </div>
+</div>
+
+
+      {/* Grid Layout */}
+      <div className="grid-container">
+        {/* Live Data Card */}
+       
+        <div className="card">
+  <h2 className="card-title">Live Data</h2>
+  {liveData && liveData.status === "ok" ? (
+    <>
+      <p className="live-value">
+        <strong>Line 1:</strong> {liveData.data.line1} A
+      </p>
+      <p className="live-value">
+        <strong>Aerators Working:</strong>{" "}
+        {Math.round(liveData.data.line1 / 3.15)}
+      </p>
+    </>
+  ) : (
+    <p className="no-data">No live data available</p>
+  )}
+</div>
+
+
+        {/* History Chart Card */}
+        <div className="card">
+          <h2 className="card-title">History (Last 2 Days)</h2>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={historyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="timestamp._seconds"
+                  tickFormatter={(sec) =>
+                    new Date(sec * 1000).toLocaleTimeString()
+                  }
+                />
+                <YAxis />
+                <Tooltip
+                  labelFormatter={(sec) =>
+                    new Date(sec * 1000).toLocaleString()
+                  }
+                />
+                <Legend />
+                <Line type="monotone" dataKey="line1" stroke="#007bff" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
