@@ -79,7 +79,7 @@ function App() {
           {liveData && liveData.status === "ok" ? (
             <>
               <p className="live-value">
-                <strong>Line 1:</strong> {liveData.data.line1} A
+                <strong>Current Reading:</strong> {liveData.data.line1} A
               </p>
               <p className="live-value">
                 <strong>Aerators Working:</strong>{" "}
@@ -116,7 +116,7 @@ function App() {
                   }
                 />
                 <Legend />
-                <Line type="monotone" dataKey="line1" stroke="#007bff" />
+                <Line type="monotone" dataKey="line1" stroke="#007bff" name="Current"  />
               </LineChart>
             </ResponsiveContainer>
           </div>
