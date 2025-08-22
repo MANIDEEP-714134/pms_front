@@ -18,6 +18,23 @@ function App() {
   const [historyData, setHistoryData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // ===== Load cached history on startup =====
+  useEffect(() => {
+    const cached = localStorage.getItem("historyData");
+    if (cached) {
+      try {
+        setHistoryData(JSON.parse(cached));
+      } catch (e) {
+        console.error("Invalid cache format");
+      }
+    }
+  }, []);
+
+  // ===== Save history to localStorage =====
+  const saveHistory = (data) => {
+    localStorage.setItem("historyData", JSON.stringify(data));
+  };
+
   // ===== Fetch live data every 5s =====
   const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
@@ -25,23 +42,33 @@ function App() {
       const res = await axios.get(
         `https://www.gfiotsolutions.com/api/data/${deviceId}`
       );
-      setLiveData(res.data);
-      setLastUpdated(new Date()); // update timestamp
+
+      if (res.data && res.data.status === "ok") {
+        const newReading = {
+          ...res.data.data,
+          timestamp: { _seconds: Math.floor(Date.now() / 1000) }
+        };
+
+        // Update live data
+        setLiveData(res.data);
+        setLastUpdated(new Date());
+
+        // Update history with new point
+        setHistoryData((prev) => {
+          const updated = [...prev, newReading];
+
+          // keep only last 2 days
+          const cutoff = Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60;
+          const filtered = updated.filter(
+            (item) => item.timestamp._seconds >= cutoff
+          );
+
+          saveHistory(filtered); // save to localStorage
+          return filtered;
+        });
+      }
     } catch (err) {
       console.error("Error fetching live data", err);
-    }
-  }, [deviceId]);
-
-  // ===== Fetch history only when user clicks =====
-  const fetchHistoryData = useCallback(async () => {
-    if (!deviceId) return;
-    try {
-      const res = await axios.get(
-        `https://www.gfiotsolutions.com/api/history/${deviceId}`
-      );
-      setHistoryData(res.data.data || []);
-    } catch (err) {
-      console.error("Error fetching history data", err);
     }
   }, [deviceId]);
 
@@ -101,12 +128,6 @@ function App() {
         {/* History Chart Card */}
         <div className="card">
           <h2 className="card-title">History (Last 2 Days)</h2>
-
-          {/* Manual Refresh Button */}
-          <button className="refresh-button" onClick={fetchHistoryData}>
-            🔄 Refresh History
-          </button>
-
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historyData}>
