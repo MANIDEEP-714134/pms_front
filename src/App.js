@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
   LineChart,
@@ -17,7 +17,7 @@ function App() {
   const [liveData, setLiveData] = useState(null);
   const [historyData, setHistoryData] = useState([]);
 
-  const fetchLiveData = async () => {
+  const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
     try {
       const res = await axios.get(
@@ -27,9 +27,9 @@ function App() {
     } catch (err) {
       console.error("Error fetching live data", err);
     }
-  };
+  }, [deviceId]);
 
-  const fetchHistoryData = async () => {
+  const fetchHistoryData = useCallback(async () => {
     if (!deviceId) return;
     try {
       const res = await axios.get(
@@ -39,7 +39,7 @@ function App() {
     } catch (err) {
       console.error("Error fetching history data", err);
     }
-  };
+  }, [deviceId]);
 
   useEffect(() => {
     fetchLiveData();
@@ -47,7 +47,7 @@ function App() {
 
     const interval = setInterval(fetchLiveData, 5000);
     return () => clearInterval(interval);
-  }, [deviceId]);
+  }, [fetchLiveData, fetchHistoryData]);
 
   return (
     <div className="app-container">
@@ -63,35 +63,31 @@ function App() {
         />
       </div>
       <div className="device-selector">
- 
-  {/* Logo below the input */}
-  <div className="logo-container">
-    <img src={require("./logo.png")} alt="Company Logo" className="logo" />
-  </div>
-</div>
-
+        {/* Logo below the input */}
+        <div className="logo-container">
+          <img src={require("./logo.png")} alt="Company Logo" className="logo" />
+        </div>
+      </div>
 
       {/* Grid Layout */}
       <div className="grid-container">
         {/* Live Data Card */}
-       
         <div className="card">
-  <h2 className="card-title">Live Data</h2>
-  {liveData && liveData.status === "ok" ? (
-    <>
-      <p className="live-value">
-        <strong>Line 1:</strong> {liveData.data.line1} A
-      </p>
-      <p className="live-value">
-        <strong>Aerators Working:</strong>{" "}
-        {Math.round(liveData.data.line1 / 3.15)}
-      </p>
-    </>
-  ) : (
-    <p className="no-data">No live data available</p>
-  )}
-</div>
-
+          <h2 className="card-title">Live Data</h2>
+          {liveData && liveData.status === "ok" ? (
+            <>
+              <p className="live-value">
+                <strong>Line 1:</strong> {liveData.data.line1} A
+              </p>
+              <p className="live-value">
+                <strong>Aerators Working:</strong>{" "}
+                {Math.round(liveData.data.line1 / 3.15)}
+              </p>
+            </>
+          ) : (
+            <p className="no-data">No live data available</p>
+          )}
+        </div>
 
         {/* History Chart Card */}
         <div className="card">
