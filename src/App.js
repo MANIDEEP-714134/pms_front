@@ -18,6 +18,7 @@ function App() {
   const [historyData, setHistoryData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // ===== Fetch live data every 5s =====
   const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
     try {
@@ -31,6 +32,7 @@ function App() {
     }
   }, [deviceId]);
 
+  // ===== Fetch history only when user clicks =====
   const fetchHistoryData = useCallback(async () => {
     if (!deviceId) return;
     try {
@@ -43,13 +45,12 @@ function App() {
     }
   }, [deviceId]);
 
+  // ===== Effect for live data polling =====
   useEffect(() => {
-    fetchLiveData();
-    fetchHistoryData();
-
+    fetchLiveData(); // initial fetch
     const interval = setInterval(fetchLiveData, 5000);
     return () => clearInterval(interval);
-  }, [fetchLiveData, fetchHistoryData]);
+  }, [fetchLiveData]);
 
   return (
     <div className="app-container">
@@ -64,8 +65,9 @@ function App() {
           className="device-input"
         />
       </div>
+
+      {/* Logo below the input */}
       <div className="device-selector">
-        {/* Logo below the input */}
         <div className="logo-container">
           <img src={require("./logo.png")} alt="Company Logo" className="logo" />
         </div>
@@ -99,6 +101,12 @@ function App() {
         {/* History Chart Card */}
         <div className="card">
           <h2 className="card-title">History (Last 2 Days)</h2>
+
+          {/* Manual Refresh Button */}
+          <button className="refresh-button" onClick={fetchHistoryData}>
+            🔄 Refresh History
+          </button>
+
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historyData}>
@@ -116,7 +124,7 @@ function App() {
                   }
                 />
                 <Legend />
-                <Line type="monotone" dataKey="line1" stroke="#007bff" name="Current"  />
+                <Line type="monotone" dataKey="line1" stroke="#007bff" />
               </LineChart>
             </ResponsiveContainer>
           </div>
