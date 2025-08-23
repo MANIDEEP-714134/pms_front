@@ -35,6 +35,38 @@ function App() {
     localStorage.setItem("historyData", JSON.stringify(data));
   };
 
+  // ===== Fetch incremental history once on startup =====
+  const fetchHistoryData = useCallback(async () => {
+    if (!deviceId) return;
+
+    try {
+      let lastTimestamp = 0;
+      if (historyData.length > 0) {
+        lastTimestamp = historyData[historyData.length - 1].timestamp._seconds;
+      }
+
+      // 🔑 API should support ?after=timestamp for incremental fetch
+      const res = await axios.get(
+        `https://www.gfiotsolutions.com/api/history/${deviceId}?after=${lastTimestamp}`
+      );
+
+      if (res.data?.data?.length) {
+        const updated = [...historyData, ...res.data.data];
+
+        // keep only last 2 days
+        const cutoff = Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60;
+        const filtered = updated.filter(
+          (item) => item.timestamp._seconds >= cutoff
+        );
+
+        setHistoryData(filtered);
+        saveHistory(filtered);
+      }
+    } catch (err) {
+      console.error("Error fetching history data", err);
+    }
+  }, [deviceId, historyData]);
+
   // ===== Fetch live data every 5s =====
   const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
@@ -53,7 +85,7 @@ function App() {
         setLiveData(res.data);
         setLastUpdated(new Date());
 
-        // Update history with new point
+        // Append to history in state + cache
         setHistoryData((prev) => {
           const updated = [...prev, newReading];
 
@@ -63,7 +95,7 @@ function App() {
             (item) => item.timestamp._seconds >= cutoff
           );
 
-          saveHistory(filtered); // save to localStorage
+          saveHistory(filtered);
           return filtered;
         });
       }
@@ -71,6 +103,11 @@ function App() {
       console.error("Error fetching live data", err);
     }
   }, [deviceId]);
+
+  // ===== Effect for startup (history) =====
+  useEffect(() => {
+    fetchHistoryData();
+  }, [fetchHistoryData]);
 
   // ===== Effect for live data polling =====
   useEffect(() => {
@@ -145,7 +182,12 @@ function App() {
                   }
                 />
                 <Legend />
-                <Line type="monotone" dataKey="line1" stroke="#007bff" name="current" />
+                <Line
+                  type="monotone"
+                  dataKey="line1"
+                  stroke="#007bff"
+                  name="current"
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
