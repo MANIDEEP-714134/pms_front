@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer
 } from "recharts";
-import "./App.css"; // import our CSS file
+import "./App.css";
 
 function App() {
   const [deviceId, setDeviceId] = useState("vishnu");
@@ -18,56 +18,26 @@ function App() {
   const [historyData, setHistoryData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // ===== Load cached history on startup =====
-  useEffect(() => {
-    const cached = localStorage.getItem("historyData");
-    if (cached) {
-      try {
-        setHistoryData(JSON.parse(cached));
-      } catch (e) {
-        console.error("Invalid cache format");
-      }
-    }
-  }, []);
-
-  // ===== Save history to localStorage =====
-  const saveHistory = (data) => {
-    localStorage.setItem("historyData", JSON.stringify(data));
-  };
-
-  // ===== Fetch incremental history once on startup =====
+  // ===== Fetch history directly from backend =====
   const fetchHistoryData = useCallback(async () => {
     if (!deviceId) return;
 
     try {
-      let lastTimestamp = 0;
-      if (historyData.length > 0) {
-        lastTimestamp = historyData[historyData.length - 1].timestamp._seconds;
-      }
-
-      // 🔑 API should support ?after=timestamp for incremental fetch
       const res = await axios.get(
-        `https://www.gfiotsolutions.com/api/history/${deviceId}?after=${lastTimestamp}`
+        `https://www.gfiotsolutions.com/api/history/${deviceId}`
       );
 
-      if (res.data?.data?.length) {
-        const updated = [...historyData, ...res.data.data];
-
-        // keep only last 2 days
-        const cutoff = Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60;
-        const filtered = updated.filter(
-          (item) => item.timestamp._seconds >= cutoff
-        );
-
-        setHistoryData(filtered);
-        saveHistory(filtered);
+      if (res.data?.status === "ok" && res.data.data?.length) {
+        setHistoryData(res.data.data);
+      } else {
+        setHistoryData([]);
       }
     } catch (err) {
       console.error("Error fetching history data", err);
     }
-  }, [deviceId, historyData]);
+  }, [deviceId]);
 
-  // ===== Fetch live data every 5s =====
+  // ===== Fetch live data =====
   const fetchLiveData = useCallback(async () => {
     if (!deviceId) return;
     try {
@@ -76,42 +46,22 @@ function App() {
       );
 
       if (res.data && res.data.status === "ok") {
-        const newReading = {
-          ...res.data.data,
-          timestamp: { _seconds: Math.floor(Date.now() / 1000) }
-        };
-
-        // Update live data
         setLiveData(res.data);
         setLastUpdated(new Date());
-
-        // Append to history in state + cache
-        setHistoryData((prev) => {
-          const updated = [...prev, newReading];
-
-          // keep only last 2 days
-          const cutoff = Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60;
-          const filtered = updated.filter(
-            (item) => item.timestamp._seconds >= cutoff
-          );
-
-          saveHistory(filtered);
-          return filtered;
-        });
       }
     } catch (err) {
       console.error("Error fetching live data", err);
     }
   }, [deviceId]);
 
-  // ===== Effect for startup (history) =====
+  // ===== Load history once on device change =====
   useEffect(() => {
     fetchHistoryData();
   }, [fetchHistoryData]);
 
-  // ===== Effect for live data polling =====
+  // ===== Poll live data every 5s =====
   useEffect(() => {
-    fetchLiveData(); // initial fetch
+    fetchLiveData(); // initial
     const interval = setInterval(fetchLiveData, 5000);
     return () => clearInterval(interval);
   }, [fetchLiveData]);
@@ -130,14 +80,13 @@ function App() {
         />
       </div>
 
-      {/* Logo below the input */}
+      {/* Logo */}
       <div className="device-selector">
         <div className="logo-container">
           <img src={require("./logo.png")} alt="Company Logo" className="logo" />
         </div>
       </div>
 
-      {/* Grid Layout */}
       <div className="grid-container">
         {/* Live Data Card */}
         <div className="card">
@@ -162,7 +111,7 @@ function App() {
           )}
         </div>
 
-        {/* History Chart Card */}
+        {/* History Chart */}
         <div className="card">
           <h2 className="card-title">History (Last 2 Days)</h2>
           <div className="chart-wrapper">
@@ -186,7 +135,7 @@ function App() {
                   type="monotone"
                   dataKey="line1"
                   stroke="#007bff"
-                  name="current"
+                  name="Current (A)"
                 />
               </LineChart>
             </ResponsiveContainer>
