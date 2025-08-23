@@ -112,7 +112,7 @@ function App() {
               </p>
               <p className="live-value">
                 <strong>Aerators Working:</strong>{" "}
-                {Math.round(liveData.data.line1 / 3.15)}
+                {Math.round(liveData.data.line1 / 2.75)}
               </p>
               {lastUpdated && (
                 <p className="timestamp">
