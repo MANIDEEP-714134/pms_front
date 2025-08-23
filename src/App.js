@@ -54,14 +54,12 @@ function App() {
     }
   }, [deviceId]);
 
-  // ===== Load history once on device change =====
-  // ===== Load + Poll history =====
-useEffect(() => {
-  fetchHistoryData(); // initial load
-  const interval = setInterval(fetchHistoryData, 60000); // every 60 sec
-  return () => clearInterval(interval);
-}, [fetchHistoryData]);
-
+  // ===== Load history once + poll every 60s =====
+  useEffect(() => {
+    fetchHistoryData(); // initial load
+    const interval = setInterval(fetchHistoryData, 60000); // every 60 sec
+    return () => clearInterval(interval);
+  }, [fetchHistoryData]);
 
   // ===== Poll live data every 5s =====
   useEffect(() => {
@@ -121,7 +119,7 @@ useEffect(() => {
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historyData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis
                   dataKey="timestamp._seconds"
                   tickFormatter={(sec) =>
@@ -139,6 +137,9 @@ useEffect(() => {
                   type="monotone"
                   dataKey="line1"
                   stroke="#007bff"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 6 }}
                   name="Current (A)"
                 />
               </LineChart>
