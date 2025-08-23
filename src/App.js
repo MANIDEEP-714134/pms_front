@@ -55,9 +55,13 @@ function App() {
   }, [deviceId]);
 
   // ===== Load history once on device change =====
-  useEffect(() => {
-    fetchHistoryData();
-  }, [fetchHistoryData]);
+  // ===== Load + Poll history =====
+useEffect(() => {
+  fetchHistoryData(); // initial load
+  const interval = setInterval(fetchHistoryData, 60000); // every 60 sec
+  return () => clearInterval(interval);
+}, [fetchHistoryData]);
+
 
   // ===== Poll live data every 5s =====
   useEffect(() => {
