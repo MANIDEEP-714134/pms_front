@@ -96,11 +96,11 @@ function App() {
           {liveData && liveData.status === "ok" ? (
             <>
               <p className="live-value">
-                <strong>Current Reading:</strong> {liveData.data.line1} A
+                <strong>Current Reading:</strong> {liveData.data.line2} A
               </p>
               <p className="live-value">
                 <strong>Aerators Working:</strong>{" "}
-                {Math.round(liveData.data.line1 / 2.75)}
+                {Math.round(liveData.data.line2 / 2.75)}
               </p>
               {lastUpdated && (
                 <p className="timestamp">
@@ -135,7 +135,7 @@ function App() {
                 <Legend />
                 <Line
                   type="monotone"
-                  dataKey="line1"
+                  dataKey="line2"
                   stroke="#007bff"
                   strokeWidth={2}
                   dot={false}
